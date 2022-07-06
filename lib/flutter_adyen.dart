@@ -8,6 +8,8 @@ class FlutterAdyen {
   static Future<String> openDropIn(
       {paymentMethods,
       required String baseUrl,
+        required String urlPayments,
+        required String urlPaymentsDetail,
       required String clientKey,
       required String publicKey,
       lineItem,
@@ -24,6 +26,8 @@ class FlutterAdyen {
     args.putIfAbsent('paymentMethods', () => paymentMethods);
     args.putIfAbsent('additionalData', () => additionalData);
     args.putIfAbsent('baseUrl', () => baseUrl);
+    args.putIfAbsent('urlPayments', () => urlPayments);
+    args.putIfAbsent('urlPaymentsDetail', () => urlPaymentsDetail);
     args.putIfAbsent('clientKey', () => clientKey);
     args.putIfAbsent('publicKey', () => publicKey);
     args.putIfAbsent('amount', () => amount);

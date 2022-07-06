@@ -21,6 +21,8 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
 
     var dropInComponent: DropInComponent?
     var baseURL: String?
+    var urlPayments: String?
+    var urlPaymentsDetail: String?
     var authToken: String?
     var merchantAccount: String?
     var clientKey: String?
@@ -44,6 +46,8 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         let arguments = call.arguments as? [String: Any]
         let paymentMethodsResponse = arguments?["paymentMethods"] as? String
         baseURL = arguments?["baseUrl"] as? String
+        urlPayments = arguments?["urlPayments"] as? String
+        urlPaymentsDetail = arguments?["urlPaymentsDetail"] as? String
         merchantAccount = arguments?["merchantAccount"] as? String
         additionalData = arguments?["additionalData"] as? [String: String]
         clientKey = arguments?["clientKey"] as? String
@@ -102,7 +106,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
 
     public func didSubmit(_ data: PaymentComponentData, for paymentMethod: PaymentMethod, from component: DropInComponent) {
         NSLog("I'm here")
-        guard let baseURL = baseURL, let url = URL(string: baseURL + "payments") else { return }
+        guard let baseURL = baseURL, let url = URL(string: baseURL + (urlPayments ?? "")) else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
@@ -183,7 +187,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
     }
 
     public func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
-        guard let baseURL = baseURL, let url = URL(string: baseURL + "payments/details") else { return }
+        guard let baseURL = baseURL, let url = URL(string: baseURL + (urlPaymentsDetail ?? "")) else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
