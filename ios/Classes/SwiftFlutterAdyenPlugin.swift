@@ -35,7 +35,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
     var lineItemJson: [String: String]?
     var shopperLocale: String?
     var additionalData: [String: String]?
-    var headersApis: [String: String]?
+    var headersHttp: [String: String]?
 
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -55,7 +55,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         returnUrl = arguments?["returnUrl"] as? String
         shopperReference = arguments?["shopperReference"] as? String
         shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "DE")
-        headersApis = arguments?["headersApis"] as? [String: String]
+        headersHttp = arguments?["headersHttp"] as? [String: String]
         mResult = result
 
         guard let paymentData = paymentMethodsResponse?.data(using: .utf8),
@@ -106,7 +106,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let headers = headersApis, !headers.isEmpty {
+        if let headers = headersHttp, !headers.isEmpty {
        // headers.add
         }
 
