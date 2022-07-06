@@ -28,7 +28,9 @@ import okhttp3.RequestBody
 import org.json.JSONObject
 import java.io.IOException
 import java.io.Serializable
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.reflect.TypeToken
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Types
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -81,18 +83,22 @@ class FlutterAdyenPlugin :
                 val additionalData = call.argument<Map<String, String>>("additionalData") ?: emptyMap()
                 val paymentMethods = call.argument<String>("paymentMethods")
                 val baseUrl = call.argument<String>("baseUrl")
+                val urlPayments = call.argument<String>("urlPayments")
+                val urlPaymentsDetail = call.argument<String>("urlPaymentsDetail")
                 val clientKey = call.argument<String>("clientKey")
                 val amount = call.argument<String>("amount")
                 val currency = call.argument<String>("currency")
                 val env = call.argument<String>("environment")
                 val lineItem = call.argument<Map<String, String>>("lineItem")
                 val shopperReference = call.argument<String>("shopperReference")
+                val headersHttp = call.argument<Map<String, String>>("headersHttp")
 
                 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
                 val lineItemString = JSONObject(lineItem).toString()
                 val additionalDataString = JSONObject(additionalData).toString()
                 val localeString = call.argument<String>("locale") ?: "de_DE"
                 val countryCode = localeString.split("_").last()
+                val headersHttpString = JSONObject(headersHttp).toString()
 
                 /*
                 Log.e("[Flutter Adyen]", "Client Key from Flutter: $clientKey")
@@ -130,12 +136,15 @@ class FlutterAdyenPlugin :
                     with(sharedPref.edit()) {
                         remove("AdyenResultCode")
                         putString("baseUrl", baseUrl)
+                        putString("urlPayments", urlPayments)
+                        putString("urlPaymentsDetail", urlPaymentsDetail)
                         putString("amount", "$amount")
                         putString("countryCode", countryCode)
                         putString("currency", currency)
                         putString("lineItem", lineItemString)
                         putString("additionalData", additionalDataString)
                         putString("shopperReference", shopperReference)
+                        putString("headersHttp", headersHttpString)
                         commit()
                     }
 
@@ -240,10 +249,15 @@ class AdyenDropinService : DropInService() {
         val uuid: UUID = UUID.randomUUID()
         val reference: String = uuid.toString()
         val shopperReference = sharedPref.getString("shopperReference", null)
+        val headersHttpString = sharedPref.getString("headersHttp", "UNDEFINED_STR")
 
         val moshi = Moshi.Builder().build()
-        val jsonAdapter = moshi.adapter(LineItem::class.java)
-        val lineItem: LineItem? = jsonAdapter.fromJson(lineItemString ?: "")
+
+        val lineItemAdapter = moshi.adapter(LineItem::class.java)
+        val lineItem: LineItem? = lineItemAdapter.fromJson(lineItemString ?: "")
+
+        val mapAdapter = moshi.adapter<Map<String, String>>(Types.newParameterizedType(Map::class.java, String::class.java, String::class.java))
+        val headersHttp = mapAdapter.fromJson(headersHttpString)
 
         val gson = Gson()
 
@@ -266,6 +280,13 @@ class AdyenDropinService : DropInService() {
         val requestBody = RequestBody.create(MediaType.parse("application/json"), paymentsRequestJson.toString())
 
         val headers: HashMap<String, String> = HashMap()
+
+        headersHttp?.let {
+            for ((key, value) in it) {
+                headers.put(key, value)
+            }
+        }
+
         val call = getService(headers, baseUrl ?: "").payments(requestBody)
         call.request().headers()
         return try {
@@ -313,9 +334,22 @@ class AdyenDropinService : DropInService() {
 
     override fun makeDetailsCall(actionComponentJson: JSONObject): DropInServiceResult {
         val sharedPref = getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
+        val headersHttpString = sharedPref.getString("headersHttp", "UNDEFINED_STR")
         val baseUrl = sharedPref.getString("baseUrl", "UNDEFINED_STR")
+
+        val moshi = Moshi.Builder().build()
+
+        val mapAdapter = moshi.adapter<Map<String, String>>(Types.newParameterizedType(Map::class.java, String::class.java, String::class.java))
+        val headersHttp = mapAdapter.fromJson(headersHttpString)
+
         val requestBody = RequestBody.create(MediaType.parse("application/json"), actionComponentJson.toString())
         val headers: HashMap<String, String> = HashMap()
+
+        headersHttp?.let {
+            for ((key, value) in it) {
+                headers.put(key, value)
+            }
+        }
 
         val call = getService(headers, baseUrl ?: "").details(requestBody)
         return try {
