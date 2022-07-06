@@ -106,8 +106,12 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        //add other headers
         if let headers = headersHttp, !headers.isEmpty {
-       // headers.add
+            headers.forEach { itemHeader in
+                request.addValue(itemHeader.value, forHTTPHeaderField: itemHeader.key)
+            }
         }
 
         let amountAsInt = Int(amount ?? "0")
@@ -182,6 +186,14 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        //add other headers
+        if let headers = headersHttp, !headers.isEmpty {
+            headers.forEach { itemHeader in
+                request.addValue(itemHeader.value, forHTTPHeaderField: itemHeader.key)
+            }
+        }
+        
         let detailsRequest = DetailsRequest(paymentData: data.paymentData ?? "", details: data.details.encodable)
         do {
             let detailsRequestData = try JSONEncoder().encode(detailsRequest)
