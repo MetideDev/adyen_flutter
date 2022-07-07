@@ -23,13 +23,15 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.Url
+import retrofit2.http.Path
 
 interface CheckoutApiService {
-    @POST("payments")
-    fun payments(@Body paymentsRequest: RequestBody): Call<PaymentsApiResponse>
+    @POST("{endpoint}")
+    fun payments(@Path(value = "endpoint", encoded = true) endpoint: String, @Body paymentsRequest: RequestBody): Call<PaymentsApiResponse>
 
-    @POST("payments/details")
-    fun details(@Body detailsRequest: RequestBody): Call<PaymentsApiResponse>
+    @POST("{endpoint}")
+    fun details(@Path(value = "endpoint", encoded = true) endpoint: String, @Body detailsRequest: RequestBody): Call<PaymentsApiResponse>
 }
 
 class HeaderInterceptor(private val headers: HashMap<String, String>) : Interceptor {

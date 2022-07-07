@@ -241,6 +241,7 @@ class AdyenDropinService : DropInService() {
     override fun makePaymentsCall(paymentComponentJson: JSONObject): DropInServiceResult {
         val sharedPref = getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
         val baseUrl = sharedPref.getString("baseUrl", "UNDEFINED_STR")
+        val urlPayments = sharedPref.getString("urlPayments", "UNDEFINED_STR")
         val amount = sharedPref.getString("amount", "UNDEFINED_STR")
         val currency = sharedPref.getString("currency", "UNDEFINED_STR")
         val countryCode = sharedPref.getString("countryCode", "DE")
@@ -287,7 +288,7 @@ class AdyenDropinService : DropInService() {
             }
         }
 
-        val call = getService(headers, baseUrl ?: "").payments(requestBody)
+        val call = getService(headers, baseUrl ?: "").payments(urlPayments ?: "",  requestBody)
         call.request().headers()
         return try {
             val response = call.execute()
@@ -334,6 +335,7 @@ class AdyenDropinService : DropInService() {
 
     override fun makeDetailsCall(actionComponentJson: JSONObject): DropInServiceResult {
         val sharedPref = getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
+        val urlPaymentsDetail = sharedPref.getString("urlPaymentsDetail", "UNDEFINED_STR")
         val headersHttpString = sharedPref.getString("headersHttp", "UNDEFINED_STR")
         val baseUrl = sharedPref.getString("baseUrl", "UNDEFINED_STR")
 
@@ -351,7 +353,7 @@ class AdyenDropinService : DropInService() {
             }
         }
 
-        val call = getService(headers, baseUrl ?: "").details(requestBody)
+        val call = getService(headers, baseUrl ?: "").details(urlPaymentsDetail ?: "", requestBody)
         return try {
             val response = call.execute()
             val detailsResponse = response.body()
