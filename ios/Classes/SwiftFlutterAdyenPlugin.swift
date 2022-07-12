@@ -58,7 +58,8 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         reference = arguments?["reference"] as? String
         returnUrl = arguments?["returnUrl"] as? String
         shopperReference = arguments?["shopperReference"] as? String
-        shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "DE")
+        shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "IT")
+        let localeParam = "\(self.shopperLocale?.lowercased() ?? "")_\(self.shopperLocale?.uppercased() ?? "")"
         headersHttp = arguments?["headersHttp"] as? [String: String]
         mResult = result
 
@@ -81,7 +82,12 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         let apiContext = APIContext(environment: ctx, clientKey: clientKey!)
         let configuration = DropInComponent.Configuration(apiContext: apiContext);
         configuration.card.showsHolderNameField = true
+        
+       /* let localizationParameters = LocalizationParameters(locale: localeParam)
+        configuration.localizationParameters = localizationParameters*/
+      
         dropInComponent = DropInComponent(paymentMethods: paymentMethods, configuration: configuration, style: dropInComponentStyle)
+        
         dropInComponent?.delegate = self
 
         if var topController = UIApplication.shared.keyWindow?.rootViewController, let dropIn = dropInComponent {
@@ -239,25 +245,13 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
     public func didFail(with error: Error, from component: DropInComponent) {
         DispatchQueue.main.async {
             if (error is PaymentCancelled) {
-                self.mResult?(self.paymentCancelledJsonString)
+                self.mResult?("PAYMENT_CANCELLED")
             } else if let componentError = error as? ComponentError, componentError == ComponentError.cancelled {
-                self.mResult?(self.paymentCancelledJsonString)
+                self.mResult?("PAYMENT_CANCELLED")
             }else {
-                self.mResult?(self.paymentErrorJsonString)
+                self.mResult?("PAYMENT_ERROR")
             }
             self.topController?.dismiss(animated: true, completion: nil)
-        }
-    }
-    
-    private var paymentErrorJsonString: String {
-        get {
-            return "{\"error\": \"PAYMENT_ERROR\"}"
-        }
-    }
-    
-    private var paymentCancelledJsonString: String {
-        get {
-            return "{\"error\": \"PAYMENT_CANCELLED\"}"
         }
     }
 }
