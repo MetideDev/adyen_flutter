@@ -96,7 +96,7 @@ class FlutterAdyenPlugin :
                 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
                 val lineItemString = JSONObject(lineItem).toString()
                 val additionalDataString = JSONObject(additionalData).toString()
-                val localeString = call.argument<String>("locale") ?: "de_DE"
+                val localeString = call.argument<String>("locale") ?: "it_IT"
                 val countryCode = localeString.split("_").last()
                 val headersHttpString = JSONObject(headersHttp).toString()
 
@@ -123,7 +123,7 @@ class FlutterAdyenPlugin :
                 try {
                     val jsonObject = JSONObject(paymentMethods ?: "")
                     val paymentMethodsApiResponse = PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
-                    val shopperLocale = Locale.GERMANY
+                    val shopperLocale = Locale(countryCode); //Locale.GERMANY
                     // val shopperLocale = if (LocaleUtil.isValidLocale(locale)) locale else LocaleUtil.getLocale(nonNullActivity)
                     // Log.e("[Flutter Adyen] SHOPPER LOCALE", "Shopper Locale from localeString $localeString: $shopperLocale")
                     val cardConfiguration = CardConfiguration.Builder(nonNullActivity, clientKey!!)
