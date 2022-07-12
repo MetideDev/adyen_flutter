@@ -113,11 +113,14 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         //add other headers
         if let headers = headersHttp, !headers.isEmpty {
             headers.forEach { itemHeader in
-                request.addValue(itemHeader.value, forHTTPHeaderField: itemHeader.key)
+                request.setValue(itemHeader.value, forHTTPHeaderField: itemHeader.key)
             }
         } else {
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
         }
+        
+       // print("\nheaders:\n\(request.allHTTPHeaderFields ?? [:])\n")
 
         let amountAsInt = Int(amount ?? "0")
         // prepare json data
@@ -147,8 +150,14 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
             let jsonData = try JSONEncoder().encode(paymentRequest)
 
             request.httpBody = jsonData
+            
             URLSession.shared.dataTask(with: request) { data, response, error in
                 if let data = data {
+                    
+                 /*   if let jsonString = String(data: data, encoding: .utf8) {
+                        print("\n data string: \(jsonString) \n")
+                    }*/
+                    
                     self.finish(data: data, component: component)
                 }
                 if error != nil {
@@ -173,9 +182,16 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
             } else {
                 component.stopLoadingIfNeeded()
                 if response.resultCode == .authorised || response.resultCode == .received || response.resultCode == .pending, let result = self.mResult {
-                    result(response.resultCode.rawValue)
-                    self.topController?.dismiss(animated: false, completion: nil)
-
+                   // result(response.resultCode.rawValue)
+                    //result(response.dictionary ?? [String: Any]()
+                    
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        result(jsonString)
+                        self.topController?.dismiss(animated: false, completion: nil)
+                    } else {
+                        self.didFail(with: PaymentError(), from: component)
+                    }
+                    
                 } else if (response.resultCode == .error || response.resultCode == .refused) {
                     self.didFail(with: PaymentError(), from: component)
                 }
@@ -223,16 +239,30 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
     public func didFail(with error: Error, from component: DropInComponent) {
         DispatchQueue.main.async {
             if (error is PaymentCancelled) {
-                self.mResult?("PAYMENT_CANCELLED")
+                self.mResult?(self.paymentCancelledJsonString)
             } else if let componentError = error as? ComponentError, componentError == ComponentError.cancelled {
-                self.mResult?("PAYMENT_CANCELLED")
+                self.mResult?(self.paymentCancelledJsonString)
             }else {
-                self.mResult?("PAYMENT_ERROR")
+                self.mResult?(self.paymentErrorJsonString)
             }
             self.topController?.dismiss(animated: true, completion: nil)
         }
     }
+    
+    private var paymentErrorJsonString: String {
+        get {
+            return "{\"error\": \"PAYMENT_ERROR\"}"
+        }
+    }
+    
+    private var paymentCancelledJsonString: String {
+        get {
+            return "{\"error\": \"PAYMENT_CANCELLED\"}"
+        }
+    }
 }
+
+// MARK: - Models
 
 struct DetailsRequest: Encodable {
     let paymentData: String
@@ -280,23 +310,57 @@ struct Amount: Codable {
     let value: Int
 }
 
-internal struct PaymentsResponse: Response {
-
+internal struct PaymentsResponse: Response, Encodable {
     internal let resultCode: ResultCode
-
+    internal let amount: Amount?
+    internal let merchantReference: String?
+    internal let pspReference: String?
+    internal let paymentMethod: PaymentMethod?
+    //internal let additionalData: [String: Any]?
     internal let action: Action?
-
-    internal init(from decoder: Decoder) throws {
+    
+    var dictionary: [String: Any]? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)).flatMap { $0 as? [String: Any] }
+    }
+    
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.resultCode = try container.decode(ResultCode.self, forKey: .resultCode)
+        self.amount = try container.decode(Amount.self, forKey: .amount)
+        self.merchantReference = try container.decode(String.self, forKey: .merchantReference)
+        self.pspReference = try container.decode(String.self, forKey: .pspReference)
+        self.paymentMethod = try container.decode(PaymentMethod.self, forKey: .paymentMethod)
+        // self.additionalData = try container.decode([String: Any].self, forKey: .additionalData)
         self.action = try container.decodeIfPresent(Action.self, forKey: .action)
     }
-
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(resultCode.rawValue, forKey: .resultCode)
+        try container.encode(amount, forKey: .amount)
+        try container.encode(merchantReference, forKey: .merchantReference)
+        try container.encode(pspReference, forKey: .pspReference)
+        try container.encode(paymentMethod, forKey: .paymentMethod)
+        //  try container.encode(additionalData, forKey: .additionalData)
+        //try container.encode(action, forKey: .action)
+    }
+    
     private enum CodingKeys: String, CodingKey {
         case resultCode
+        case amount
+        case merchantReference
+        case pspReference
+        case paymentMethod
+        //case additionalData
         case action
     }
-
+    
+    internal struct PaymentMethod: Codable {
+        let brand: String
+        let type: String
+    }
+    
 }
 
 internal extension PaymentsResponse {

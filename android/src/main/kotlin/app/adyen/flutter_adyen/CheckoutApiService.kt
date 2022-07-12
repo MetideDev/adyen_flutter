@@ -79,5 +79,7 @@ data class PaymentsApiResponse(
         val resultCode: String? = null,
         val paymentData: String? = null,
         val details: List<InputDetail>? = null,
-        val action: Action? = null
+        val action: Action? = null,
+        val merchantReference: String? = null,
+        val pspReference: String? = null
 )

@@ -134,7 +134,7 @@ class FlutterAdyenPlugin :
 
                     val sharedPref = nonNullActivity.getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
                     with(sharedPref.edit()) {
-                        remove("AdyenResultCode")
+                        remove("AdyenPaymentResult")
                         putString("baseUrl", baseUrl)
                         putString("urlPayments", urlPayments)
                         putString("urlPaymentsDetail", urlPaymentsDetail)
@@ -171,7 +171,7 @@ class FlutterAdyenPlugin :
         if (activity == null) return false
 
         val sharedPref = activity!!.getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
-        val storedResultCode = sharedPref.getString("AdyenResultCode", "PAYMENT_CANCELLED")
+        val storedResultCode = sharedPref.getString("AdyenPaymentResult", "PAYMENT_CANCELLED")
         flutterResult?.success(storedResultCode)
         flutterResult = null
         return true
@@ -294,10 +294,19 @@ class AdyenDropinService : DropInService() {
             val response = call.execute()
             val paymentsResponse = response.body()
 
+           /* println(" ")
+            println("Android - makePaymentsCall response: $response")
+            println(" ")
+            println("Android - paymentsResponse: $paymentsResponse")*/
+
+            val jsonStringPaymentResponse = gson.toJson(paymentsResponse) ?: ""
+            /* println(" ")
+            println("Android - jsonStringPaymentResponse: $jsonStringPaymentResponse")*/
+
             if (response.isSuccessful && paymentsResponse != null) {
                 if (paymentsResponse.action != null) {
                     with(sharedPref.edit()) {
-                        putString("AdyenResultCode", paymentsResponse.action.toString())
+                        putString("AdyenPaymentResult", paymentsResponse.action.toString())
                         commit()
                     }
                     DropInServiceResult.Action(paymentsResponse.action)
@@ -305,28 +314,28 @@ class AdyenDropinService : DropInService() {
                     if (paymentsResponse.resultCode != null &&
                             (paymentsResponse.resultCode == "Authorised" || paymentsResponse.resultCode == "Received" || paymentsResponse.resultCode == "Pending")) {
                         with(sharedPref.edit()) {
-                            putString("AdyenResultCode", paymentsResponse.resultCode)
+                            putString("AdyenPaymentResult", jsonStringPaymentResponse /*paymentsResponse.resultCode*/)
                             commit()
                         }
-                       DropInServiceResult.Finished(paymentsResponse.resultCode)
+                       DropInServiceResult.Finished(jsonStringPaymentResponse /*paymentsResponse.resultCode*/)
                     } else {
                         with(sharedPref.edit()) {
-                            putString("AdyenResultCode", paymentsResponse.resultCode ?: "EMPTY")
+                            putString("AdyenPaymentResult", jsonStringPaymentResponse /*paymentsResponse.resultCode ?: "EMPTY"*/)
                             commit()
                         }
-                       DropInServiceResult.Finished(paymentsResponse.resultCode ?: "EMPTY")
+                       DropInServiceResult.Finished(jsonStringPaymentResponse /*paymentsResponse.resultCode ?: "EMPTY"*/)
                     }
                 }
             } else {
                 with(sharedPref.edit()) {
-                    putString("AdyenResultCode", "ERROR")
+                    putString("AdyenPaymentResult", "ERROR")
                     commit()
                 }
                 DropInServiceResult.Error(errorMessage = "IOException")
             }
         } catch (e: IOException) {
             with(sharedPref.edit()) {
-                putString("AdyenResultCode", "ERROR")
+                putString("AdyenPaymentResult", "ERROR")
                 commit()
             }
             DropInServiceResult.Error(errorMessage = "IOException")
@@ -353,14 +362,26 @@ class AdyenDropinService : DropInService() {
             }
         }
 
+        val gson = Gson()
+
         val call = getService(headers, baseUrl ?: "").details(urlPaymentsDetail ?: "", requestBody)
         return try {
             val response = call.execute()
             val detailsResponse = response.body()
+
+            /*println(" ")
+            println("Android - makeDetailsCall response: $detailsResponse")
+            println(" ")
+            println("Android - paymentsDetailsResponse: $detailsResponse")*/
+
+            val jsonStringDetailsResponse = gson.toJson(detailsResponse) ?: ""
+            /* println(" ")
+            println("Android - jsonStringDetailsResponse: jsonStringDetailsResponse")*/
+
             if (response.isSuccessful && detailsResponse != null) {
                 if (detailsResponse.action != null) {
                     with(sharedPref.edit()) {
-                        putString("AdyenResultCode", detailsResponse.action.toString())
+                        putString("AdyenPaymentResult", detailsResponse.action.toString())
                         commit()
                     }
                     DropInServiceResult.Action(detailsResponse.action)
@@ -368,27 +389,27 @@ class AdyenDropinService : DropInService() {
                 else if (detailsResponse.resultCode != null &&
                         (detailsResponse.resultCode == "Authorised" || detailsResponse.resultCode == "Received" || detailsResponse.resultCode == "Pending")) {
                     with(sharedPref.edit()) {
-                        putString("AdyenResultCode", detailsResponse.resultCode)
+                        putString("AdyenPaymentResult", jsonStringDetailsResponse /*detailsResponse.resultCode*/)
                         commit()
                     }
-                    DropInServiceResult.Finished(detailsResponse.resultCode)
+                    DropInServiceResult.Finished(jsonStringDetailsResponse /*detailsResponse.resultCode*/)
                 } else {
                     with(sharedPref.edit()) {
-                        putString("AdyenResultCode", detailsResponse.resultCode ?: "EMPTY")
+                        putString("AdyenPaymentResult", jsonStringDetailsResponse /*detailsResponse.resultCode ?: "EMPTY"*/)
                         commit()
                     }
-                    DropInServiceResult.Finished(detailsResponse.resultCode ?: "EMPTY")
+                    DropInServiceResult.Finished(jsonStringDetailsResponse /*detailsResponse.resultCode ?: "EMPTY"*/)
                 }
             } else {
                 with(sharedPref.edit()) {
-                    putString("AdyenResultCode", "ERROR")
+                    putString("AdyenPaymentResult", "ERROR")
                     commit()
                 }
                 DropInServiceResult.Error(errorMessage = "IOException")
             }
         } catch (e: IOException) {
             with(sharedPref.edit()) {
-                putString("AdyenResultCode", "ERROR")
+                putString("AdyenPaymentResult", "ERROR")
                 commit()
             }
             DropInServiceResult.Error(errorMessage =  "IOException")
