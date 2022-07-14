@@ -58,8 +58,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         reference = arguments?["reference"] as? String
         returnUrl = arguments?["returnUrl"] as? String
         shopperReference = arguments?["shopperReference"] as? String
-        shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "IT")
-        let localeParam = "\(self.shopperLocale?.lowercased() ?? "")_\(self.shopperLocale?.uppercased() ?? "")"
+        shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "-").last ?? "IT")
         headersHttp = arguments?["headersHttp"] as? [String: String]
         mResult = result
 
@@ -83,8 +82,9 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         let configuration = DropInComponent.Configuration(apiContext: apiContext);
         configuration.card.showsHolderNameField = true
         
-       /* let localizationParameters = LocalizationParameters(locale: localeParam)
-        configuration.localizationParameters = localizationParameters*/
+        let shopperLocaleArg = arguments?["locale"] as? String ?? "it-IT"
+        let localizationParameters = LocalizationParameters(bundle: Bundle(for: Self.self), tableName: "Localizable", keySeparator: ".", locale: shopperLocaleArg)
+        configuration.localizationParameters = localizationParameters
       
         dropInComponent = DropInComponent(paymentMethods: paymentMethods, configuration: configuration, style: dropInComponentStyle)
         
@@ -160,9 +160,9 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
             URLSession.shared.dataTask(with: request) { data, response, error in
                 if let data = data {
                     
-                 /*   if let jsonString = String(data: data, encoding: .utf8) {
+                    if let jsonString = String(data: data, encoding: .utf8) {
                         print("\n data string: \(jsonString) \n")
-                    }*/
+                    }
                     
                     self.finish(data: data, component: component)
                 }
