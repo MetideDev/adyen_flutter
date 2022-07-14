@@ -304,57 +304,23 @@ struct Amount: Codable {
     let value: Int
 }
 
-internal struct PaymentsResponse: Response, Encodable {
+internal struct PaymentsResponse: Response {
+
     internal let resultCode: ResultCode
-    internal let amount: Amount?
-    internal let merchantReference: String?
-    internal let pspReference: String?
-    internal let paymentMethod: PaymentMethod?
-    //internal let additionalData: [String: Any]?
+
     internal let action: Action?
-    
-    var dictionary: [String: Any]? {
-        guard let data = try? JSONEncoder().encode(self) else { return nil }
-        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)).flatMap { $0 as? [String: Any] }
-    }
-    
-    init(from decoder: Decoder) throws {
+
+    internal init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.resultCode = try container.decode(ResultCode.self, forKey: .resultCode)
-        self.amount = try container.decode(Amount.self, forKey: .amount)
-        self.merchantReference = try container.decode(String.self, forKey: .merchantReference)
-        self.pspReference = try container.decode(String.self, forKey: .pspReference)
-        self.paymentMethod = try container.decode(PaymentMethod.self, forKey: .paymentMethod)
-        // self.additionalData = try container.decode([String: Any].self, forKey: .additionalData)
         self.action = try container.decodeIfPresent(Action.self, forKey: .action)
     }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(resultCode.rawValue, forKey: .resultCode)
-        try container.encode(amount, forKey: .amount)
-        try container.encode(merchantReference, forKey: .merchantReference)
-        try container.encode(pspReference, forKey: .pspReference)
-        try container.encode(paymentMethod, forKey: .paymentMethod)
-        //  try container.encode(additionalData, forKey: .additionalData)
-        //try container.encode(action, forKey: .action)
-    }
-    
+
     private enum CodingKeys: String, CodingKey {
         case resultCode
-        case amount
-        case merchantReference
-        case pspReference
-        case paymentMethod
-        //case additionalData
         case action
     }
-    
-    internal struct PaymentMethod: Codable {
-        let brand: String
-        let type: String
-    }
-    
+
 }
 
 internal extension PaymentsResponse {
