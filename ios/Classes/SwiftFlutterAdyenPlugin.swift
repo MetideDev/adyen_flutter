@@ -83,6 +83,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         configuration.card.showsHolderNameField = true
         
         let shopperLocaleArg = arguments?["locale"] as? String ?? "it-IT"
+
         let localizationParameters = LocalizationParameters(bundle: Bundle(for: Self.self), tableName: "Localizable", keySeparator: ".", locale: shopperLocaleArg)
         configuration.localizationParameters = localizationParameters
       
