@@ -244,7 +244,7 @@ class AdyenDropinService : DropInService() {
         val urlPayments = sharedPref.getString("urlPayments", "UNDEFINED_STR")
         val amount = sharedPref.getString("amount", "UNDEFINED_STR")
         val currency = sharedPref.getString("currency", "UNDEFINED_STR")
-        val countryCode = sharedPref.getString("countryCode", "DE")
+        val countryCode = sharedPref.getString("countryCode", "IT")
         val lineItemString = sharedPref.getString("lineItem", "UNDEFINED_STR")
         val additionalDataString = sharedPref.getString("additionalData", "UNDEFINED_STR")
         val uuid: UUID = UUID.randomUUID()
@@ -274,7 +274,7 @@ class AdyenDropinService : DropInService() {
                 currency = currency ?: "",
                 reference = reference,
                 shopperReference = shopperReference,
-                countryCode = countryCode ?: "DE",
+                countryCode = countryCode ?: "IT",
                 additionalData = additionalData)
         val paymentsRequestJson = serializePaymentsRequest(paymentsRequest)
 
@@ -449,7 +449,7 @@ fun createAmount(value: Int, currency: String): Amount {
 //region data classes
 data class Payment(
         val paymentMethod: PaymentMethodDetails,
-        val countryCode: String = "DE",
+        val countryCode: String = "IT",
         val storePaymentMethod: Boolean,
         val amount: Amount,
         val reference: String,
